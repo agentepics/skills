@@ -48,7 +48,7 @@ metadata:
 
 | Field           | Required | Constraints                                                                                                       |
 | --------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
-| `name`          | Yes      | Max 64 characters. Unicode lowercase letters, numbers, and hyphens only. Must not start or end with a hyphen.   |
+| `name`          | Yes      | Max 64 characters. Lowercase letters, numbers, and hyphens only. Must not start or end with a hyphen.             |
 | `description`   | Yes      | Max 1024 characters. Non-empty. Describes what the skill does and when to use it.                                 |
 | `license`       | No       | License name or reference to a bundled license file.                                                              |
 | `compatibility` | No       | Max 500 characters. Indicates environment requirements (intended product, system packages, network access, etc.). |
@@ -60,7 +60,7 @@ metadata:
 The required `name` field:
 
 * Must be 1-64 characters
-* May only contain Unicode lowercase letters, digits, and hyphens
+* May only contain unicode lowercase alphanumeric characters and hyphens (`a-z` and `-`)
 * Must not start or end with `-`
 * Must not contain consecutive hyphens (`--`)
 * Must match the parent directory name
@@ -242,7 +242,7 @@ Keep file references one level deep from `SKILL.md`. Avoid deeply nested referen
 
 ## Validation
 
-Use the [skills-ref](https://github.com/agentepics/agentepics/tree/main/skills-ref) reference library to validate your skills:
+Use the [skills-ref](https://github.com/agentskills/agentskills/tree/main/skills-ref) reference library to validate your skills:
 
 ```bash
 skills-ref validate ./my-skill

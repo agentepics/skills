@@ -5,37 +5,22 @@ description: "The complete format specification for Agent Epics."
 
 **Version 0.5.0**
 
-This page defines the portable, repo-tracked core of an epic: identity,
+`EPIC-STANDARD.md` defines the portable, repo-tracked core of an epic: identity,
 authoritative files, resumption, mutable state, and compatibility rules.
 
-Read this page when you need the **normative core format**.
-If you only need the quick map, start at [Epic Reference](/specification).
-If you need executor behavior for hooks, cron, or policy, go to
-[Epic Runtime](/epic-runtime).
+Companion documents:
 
-Companion pages:
+- `EPIC-RUNTIME.md` — normative runtime and executor behavior for `hooks/`, `cron.d/`, `policy.yml`, and `runtime/`
+- `EPIC-EXAMPLES.md` — non-normative examples, directory trees, and patterns
 
-- [Epic runtime specification](/epic-runtime) — normative runtime and executor behavior for `hooks/`, `cron.d/`, `policy.yml`, and `runtime/`
-- [Epic examples](/epic-examples) — non-normative examples, directory trees, and patterns
-
-This page defines the core EPIC surface. Runtime behavior is specified
-separately, but reserved fields, lifecycle values, precedence rules, and
-trigger names are normative across the full EPIC specification.
+This split is structural, not semantic. Reserved fields, lifecycle values, precedence rules, and trigger names are unchanged from `v0.4.13`.
 
 ## Scope
 
-The EPIC standard describes durable agent workflows and capabilities that an
-AI agent (or human-AI pair) can resume, reuse, automate, or keep installed
-over time. Every epic is still a skill: `SKILL.md` handles routing and
-instructions, and `EPIC.md` adds stateful operating context.
-
-An epic is not defined by how long it takes. It may be a one-off effort that
-needs durable state, a reusable workflow template with fresh working state each
-run, or a capability that remains installed indefinitely.
-
-An epic is also the durable state container for that work. It can hold the
-current plan, machine-readable facts, decision history, logs, recurring jobs,
-and event-triggered handlers in one portable operating surface.
+The EPIC standard describes stateful, long-running workflows that an AI agent
+(or human-AI pair) can operate on across sessions. Every epic is still a skill:
+`SKILL.md` handles routing and instructions, and `EPIC.md` adds stateful
+workflow context.
 
 This core document covers:
 
@@ -47,17 +32,11 @@ This core document covers:
 - portability, validation, and compatibility
 
 Detailed runtime behavior for hooks, cron, policy, and executor metadata is
-specified in the [epic runtime specification](/epic-runtime).
+specified in `EPIC-RUNTIME.md`.
 
 ## Design Principles
 
 - **Backward compatible.** Every epic is a valid skill.
-- **Durable over time.** Epics support reusable workflows, autonomous
-  operation, and installed capabilities, not just tasks that happen to take
-  longer.
-- **Containerized state.** Epics keep durable working state, strategic state,
-  and runtime rules together so the agent can operate from one authoritative
-  context.
 - **Progressively disclosed.** Agents load only what they need.
 - **Mutable/immutable separation.** Agents must know which files are safe to update during normal operation.
 - **Portable by default.** Repo-tracked epic files should survive copy, export, import, and executor changes without silent rewrites.
@@ -73,7 +52,7 @@ stable while instance state lives in `plans/`, `state.json` or `state/`,
 **Instance epics** are one-off efforts with unique scope. The `EPIC.md` body may
 describe the specific project rather than a generic workflow.
 
-**Capability epics** extend the agent itself through a durable capability,
+**Capability epics** extend the agent itself through a long-lived capability,
 integration, or tool surface. The agent works with the epic as an installed
 capability.
 
@@ -106,11 +85,11 @@ epic-name/
 ├── DECISIONS.md         (optional — curated decision records)
 │
 │   # Optional extensions
-├── cron.d/              (optional — recurring task definitions; see /epic-runtime)
+├── cron.d/              (optional — recurring task definitions; see EPIC-RUNTIME.md)
 ├── skills/              (optional — epic-scoped skills)
-├── hooks/               (optional — event-triggered typed handlers; see /epic-runtime)
-├── policy.yml           (optional — autonomous-operation constraints; see /epic-runtime)
-├── runtime/             (optional — non-portable executor metadata; see /epic-runtime)
+├── hooks/               (optional — event-triggered typed handlers; see EPIC-RUNTIME.md)
+├── policy.yml           (optional — autonomous-operation constraints; see EPIC-RUNTIME.md)
+├── runtime/             (optional — non-portable executor metadata; see EPIC-RUNTIME.md)
 ├── artifacts/           (optional — produced outputs, deliverables)
 ├── scripts/             (inherited from SKILL.md standard)
 ├── references/          (inherited from SKILL.md standard)
@@ -126,11 +105,6 @@ context.
 <Tip>
 A two-file epic is valid. The minimum useful stateful epic usually adds `plans/` and `log/`.
 </Tip>
-
-One epic may have several ongoing workstreams around the same operating
-context: tactical work tracked through `plans/`, recurring jobs in `cron.d/`,
-event-driven reactions in `hooks/`, and durable machine-readable facts in
-`state.json` or `state/`.
 
 ## Mutability Tiers
 
@@ -231,10 +205,10 @@ Epics extend the skill disclosure model from 3 to 6 levels:
 | Level | What | When loaded | Budget |
 |-------|------|-------------|--------|
 | 1 | `SKILL.md` frontmatter | Always — skill index | ~150 words |
-| 2 | `SKILL.md` body + `EPIC.md` + `policy.yml` when present | When epic activates | &lt;500 lines combined |
-| 3 | `state.json` or `state/core.json` + current plan from `plans/` | Immediately after activation | &lt;150 lines combined |
+| 2 | `SKILL.md` body + `EPIC.md` + `policy.yml` when present | When epic activates | <500 lines combined |
+| 3 | `state.json` or `state/core.json` + current plan from `plans/` | Immediately after activation | <150 lines combined |
 | 4 | Recent log entries (last 3-5) | For session continuity | ~200 lines |
-| 5 | `ROADMAP.md` + `DECISIONS.md` | When strategic context is needed | &lt;300 lines |
+| 5 | `ROADMAP.md` + `DECISIONS.md` | When strategic context is needed | <300 lines |
 | 6 | Full logs, skills, references, and supporting folders | On demand | Unlimited |
 
 Level 1 remains `SKILL.md` frontmatter only so plugin-based coding agents can
@@ -264,17 +238,17 @@ fields defined by this standard.
 
 ### Normative validation surface
 
-The normative EPIC validation surface is:
+The normative surface across the split EPIC spec is:
 
 - `EPIC.md` frontmatter
 - `state.json` reserved fields
 - `state/core.json` reserved fields
 - plan file required sections
 - log frontmatter
-- `cron.d/*.yml` as defined in the [epic runtime specification](/epic-runtime)
-- `policy.yml` as defined in the [epic runtime specification](/epic-runtime)
-- markdown hook frontmatter as defined in the [epic runtime specification](/epic-runtime)
-- HTTP hook YAML config as defined in the [epic runtime specification](/epic-runtime)
+- `cron.d/*.yml` as defined in `EPIC-RUNTIME.md`
+- `policy.yml` as defined in `EPIC-RUNTIME.md`
+- markdown hook frontmatter as defined in `EPIC-RUNTIME.md`
+- HTTP hook YAML config as defined in `EPIC-RUNTIME.md`
 
 ### Compatibility rules
 
@@ -289,7 +263,7 @@ Implementations SHOULD document which of these levels they satisfy:
 
 - **Read-only loader** — discovers epics, reads authoritative files, and validates reserved fields
 - **Interactive executor** — performs resumption and user-driven updates while following mutability and validation rules
-- **Autonomous executor** — additionally supports the [epic runtime specification](/epic-runtime), manages `runtime/`, and enforces `policy.yml` during unattended execution
+- **Autonomous executor** — additionally supports `EPIC-RUNTIME.md`, manages `runtime/`, and enforces `policy.yml` during unattended execution
 
 ## ROADMAP.md — Strategic Intent
 
@@ -325,7 +299,7 @@ The current plan is tracked by the reserved `current_plan` field in
 exists or `current_plan` is absent, tooling SHOULD load the most recently
 modified plan file.
 
-Past plans are preserved in the directory and form a lightweight plan history.
+Old plans are preserved in the directory and form a lightweight plan history.
 
 Plan files MUST contain:
 
@@ -390,10 +364,9 @@ agent or user name.
 Log entries MUST NOT contain secrets, tokens, API keys, or unredacted private user data. Agents SHOULD redact sensitive values before writing.
 </Warning>
 
-Log frontmatter is normative. At minimum it MUST identify the `actor` and
-record the `type` of entry. When runtime systems include correlation metadata
-such as `idempotency_key`, that metadata becomes part of the log frontmatter
-contract for that entry and MUST be preserved.
+Log frontmatter is normative. At minimum it SHOULD identify the actor and
+record the type of entry. When runtime systems include correlation metadata such
+as `idempotency_key`, that metadata is part of the log frontmatter contract.
 Entries MAY also record fields such as `epic`, `duration_minutes`, and
 `tokens_used`.
 
@@ -432,7 +405,7 @@ without silent rewrites.
 
 ## Relationship to SKILL.md
 
-EPIC builds on `SKILL.md` as follows:
+The relationship is unchanged:
 
 - `SKILL.md` describes how to do work.
 - `EPIC.md` and epic state describe doing that work over time.
@@ -440,7 +413,5 @@ EPIC builds on `SKILL.md` as follows:
 - Epics add lifecycle, memory, and optional runtime behavior.
 
 <Note>
-For runtime behavior including hooks, cron jobs, policy constraints, and executor
-metadata, see the [epic runtime specification](/epic-runtime). For worked
-examples and patterns, see [epic examples](/epic-examples).
+For runtime behavior including hooks, cron jobs, policy constraints, and executor metadata, see the [EPIC-RUNTIME.md](https://github.com/anthropics/skills) companion specification.
 </Note>
