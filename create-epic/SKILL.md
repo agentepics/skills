@@ -139,18 +139,19 @@ Keep each section to 2–4 items. Be specific — "Set up X" not "Get started".
 
 ### Step 5: Create hooks/
 
-**Always create these hooks:**
+**Always create this hook:**
 
 - `install.md` — runs on first activation. Should orient the epic, verify prerequisites, populate initial state, and write the first log entry.
-- `status-changed.md` — runs when status changes. Should handle pause/resume/complete transitions and update state accordingly.
 
 **Create additional hooks based on archetype:**
 
-| Archetype | Additional hooks |
-|-----------|-----------------|
-| workflow | `plan-empty.md`, `milestone-complete.md` |
-| instance | `plan-empty.md`, `became-blocked.md` |
-| capability | `became-blocked.md` |
+| Archetype | Recommended hooks |
+|-----------|-------------------|
+| workflow | `status-changed.md`, `plan-empty.md`, `milestone-complete.md` |
+| instance | `status-changed.md`, `plan-empty.md`, `became-blocked.md` |
+| capability | `status-changed.md`, `became-blocked.md` |
+
+`status-changed.md` is recommended when the epic needs special handling for pause/resume/complete transitions, but is not required.
 
 Hook format:
 
@@ -231,7 +232,6 @@ After creating all files, verify:
 - [ ] state.json has state_version, status, and current_plan fields
 - [ ] plans/001-initial.md has Now, Next, and Blocked sections
 - [ ] hooks/install.md exists and handles first activation
-- [ ] hooks/status-changed.md exists and handles pause/resume
 - [ ] At least one cron job exists if the epic is autonomous
 - [ ] policy.yml has autonomy and escalation sections
 - [ ] All file content is specific to this epic — no generic placeholder text

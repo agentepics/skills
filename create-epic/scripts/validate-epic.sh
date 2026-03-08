@@ -361,11 +361,11 @@ if [ -d "$EPIC_DIR/hooks" ]; then
     fail "Missing install hook (install.md or install.d/)"
   fi
 
-  # Check for status-changed hook
+  # Check for status-changed hook (recommended, not required)
   if [ -f "$EPIC_DIR/hooks/status-changed.md" ] || [ -d "$EPIC_DIR/hooks/status-changed.d" ]; then
     pass "Has status-changed hook"
   else
-    fail "Missing status-changed hook (status-changed.md or status-changed.d/)"
+    warn "No status-changed hook (recommended for pause/resume handling)"
   fi
 
   # Validate each hook file
