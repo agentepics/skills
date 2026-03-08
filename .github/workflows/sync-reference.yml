@@ -1,0 +1,58 @@
+name: Sync reference files from agentepics/agentepics
+
+on:
+  repository_dispatch:
+    types: [sync-reference]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout skills repo
+        uses: actions/checkout@v4
+
+      - name: Fetch reference files from source repo
+        run: |
+          set -euo pipefail
+
+          SOURCE_REPO="agentepics/agentepics"
+          BRANCH="main"
+
+          mkdir -p reference
+
+          curl -sL "https://raw.githubusercontent.com/${SOURCE_REPO}/${BRANCH}/docs/epic-specification.mdx" \
+            -o reference/epic-specification.mdx
+
+          curl -sL "https://raw.githubusercontent.com/${SOURCE_REPO}/${BRANCH}/docs/epic-runtime.mdx" \
+            -o reference/epic-runtime.mdx
+
+          curl -sL "https://raw.githubusercontent.com/${SOURCE_REPO}/${BRANCH}/docs/epic-examples.mdx" \
+            -o reference/epic-examples.mdx
+
+          curl -sL "https://raw.githubusercontent.com/${SOURCE_REPO}/${BRANCH}/docs/specification.mdx" \
+            -o reference/skill-specification.mdx
+
+          curl -sL "https://raw.githubusercontent.com/${SOURCE_REPO}/${BRANCH}/reference/SKILL-STANDARD.md" \
+            -o reference/SKILL-STANDARD.md
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add reference/
+          git commit -m "Sync reference files from agentepics/agentepics"
+          git push

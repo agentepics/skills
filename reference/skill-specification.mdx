@@ -1,0 +1,174 @@
+---
+title: "Epic Reference"
+description: "Reference entry point for Agent Epics: the required files, core operating surface, runtime extensions, and compatibility model."
+---
+
+This page is the main reference entry point for Agent Epics.
+
+## Which page to read
+
+- Read **this page** when you want the shortest accurate map of the EPIC
+  surface: required files, state precedence, runtime extensions, and where each
+  rule lives.
+- Read [Epic Specification](/epic-specification) when you need the normative
+  portable file-format rules for `EPIC.md`, plans, state, logs, and precedence.
+- Read [Epic Runtime](/epic-runtime) when you need executor behavior for
+  `hooks/`, `cron.d/`, `policy.yml`, and `runtime/`.
+- Read [Epic Examples](/epic-examples) or the
+  [Worked example](/epic-creation/worked-example) when you want concrete
+  patterns rather than the normative surface.
+
+If you need the full normative details, continue to:
+
+- [Epic Specification](/epic-specification) for core EPIC semantics
+- [Epic Runtime](/epic-runtime) for hooks, cron, policy, and executor behavior
+
+This page summarizes the model those documents define. It is the reference map,
+not the full normative text.
+
+## What an epic is
+
+An epic is a valid `SKILL.md` package plus an `EPIC.md` file and, optionally,
+an operating file set around it.
+
+```directory
+my-epic/
+├── SKILL.md
+├── EPIC.md
+├── plans/
+├── state.json
+├── log/
+├── ROADMAP.md
+├── DECISIONS.md
+├── hooks/
+├── cron.d/
+├── policy.yml
+├── artifacts/
+├── skills/
+├── scripts/
+├── references/
+└── assets/
+```
+
+The key distinction is that the epic can hold durable state and operating
+behavior, not just reusable instructions.
+
+## Required files
+
+Every epic requires:
+
+- `SKILL.md` for discovery and activation
+- `EPIC.md` for durable identity and operating definition
+
+`SKILL.md` keeps the package compatible with existing skill loaders.
+`EPIC.md` is what makes the package an epic.
+
+## `EPIC.md`
+
+`EPIC.md` contains:
+
+- YAML frontmatter with required identity fields
+- a Markdown body describing the epic's purpose, scope, phases, success model,
+  and resumption guidance
+
+Required frontmatter fields:
+
+| Field | Purpose |
+|-------|---------|
+| `id` | Unique epic identifier within the workspace |
+| `spec_version` | EPIC spec version targeted by the file |
+
+Common optional fields:
+
+| Field | Purpose |
+|-------|---------|
+| `tags` | Lightweight classification tags |
+| `timezone` | Default timezone for runtime behavior |
+
+The body should describe what stays true across sessions and, for reusable
+workflow epics, across runs.
+
+## Core operating files
+
+The core operating surface is usually built from these files:
+
+| File or directory | Role |
+|-------------------|------|
+| `plans/` | Tactical working loop: now, next, blocked |
+| `state.json` or `state/` | Machine-readable facts and lifecycle state |
+| `log/` | Append-only durable history |
+| `ROADMAP.md` | Longer-horizon milestones |
+| `DECISIONS.md` | Curated decision memory |
+| `artifacts/` | Outputs, deliverables, and generated work |
+
+An epic does not need all of them to be valid. They appear as the epic is used.
+
+## State precedence
+
+When both state forms exist:
+
+- `state/core.json` is authoritative over `state.json`
+
+Reserved state fields:
+
+| Field | Meaning |
+|-------|---------|
+| `state_version` | Schema version for the structured state |
+| `status` | Lifecycle status: `active`, `paused`, `complete`, `abandoned` |
+| `current_plan` | Active plan filename in `plans/` |
+
+Everything else in structured state is epic-defined.
+
+## Logs
+
+Logs provide durable continuity across sessions, collaborators, and autonomous
+runs.
+
+Filename format:
+
+`YYYY-MM-DDTHH-MM-SSZ-{actor}-{slug}.md`
+
+Logs are append-only except for redaction.
+
+## Runtime surface
+
+Runtime extensions let an epic operate beyond interactive resumption:
+
+| Feature | Purpose |
+|---------|---------|
+| `hooks/` | Event-triggered reactions |
+| `cron.d/` | Recurring execution |
+| `policy.yml` | Hard constraints on autonomous operation |
+| `runtime/` | Executor-specific, non-portable metadata |
+
+These features are specified in [Epic Runtime](/epic-runtime). A compliant
+executor must either honor them or surface that it does not support them.
+
+## Archetypes
+
+Most epics fall into one of three patterns:
+
+- **Workflow epic**: reusable operating model with fresh state for each run
+- **Instance epic**: one specific long-lived project
+- **Capability epic**: installed agent capability that keeps operating over time
+
+See [Epic archetypes](/epic-creation/archetypes) for concrete examples.
+
+## Compatibility model
+
+Every epic is still a valid skill package. That means:
+
+- skill-aware systems can still discover `SKILL.md`
+- epic-aware systems can additionally detect `EPIC.md`
+- the surrounding operating files provide durable state, memory, and runtime behavior
+
+If you need the underlying `SKILL.md` compatibility rules, read the
+[SKILL.md Reference](/skill-specification).
+
+## Implementation references
+
+- [Epic Specification](/epic-specification) for normative core rules
+- [Epic Runtime](/epic-runtime) for executor and runtime behavior
+- [Worked example](/epic-creation/worked-example) for one end-to-end reusable website epic
+- [Epic Usage](/epic-usage) for how agents materialize plans, state, logs, and runtime evolution over time
+- [How to add EPIC support](/client-implementation/add-epics-support) for harness implementation guidance
