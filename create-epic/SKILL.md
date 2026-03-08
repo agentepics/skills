@@ -236,7 +236,17 @@ After creating all files, verify:
 - [ ] policy.yml has autonomy and escalation sections
 - [ ] All file content is specific to this epic — no generic placeholder text
 
-Report the created file tree and a one-line summary of each file to the user.
+Then run the validator:
+
+```bash
+scripts/validate-epic.sh <epic-directory>
+```
+
+The validator checks all required files, frontmatter, body sections, state fields, plan
+structure, hook format, cron YAML, policy structure, and cross-file consistency. Fix
+any errors before considering the epic complete. Warnings are advisory.
+
+Report the created file tree, validator output, and a one-line summary of each file to the user.
 
 ## Edge cases
 
