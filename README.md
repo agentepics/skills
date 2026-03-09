@@ -17,18 +17,23 @@ Each top-level skill directory is a standalone installable unit built around a `
 
 ### `create-epic`
 
-`create-epic` scaffolds a complete, operational Agent Epic from a user objective. It guides the agent to generate:
+`create-epic` scaffolds a complete, operational Agent Epic from a user objective. It guides the agent to generate the curated authored profile:
 
 - `SKILL.md`
 - `EPIC.md`
-- `state.json`
-- `plans/`
-- `log/`
+- `runtime/state.json`
+- `runtime/plans/`
+- `runtime/log/`
 - `cron.d/`
 - `hooks/`
 - `policy.yml`
 
 The skill also includes a validator script at `create-epic/scripts/validate-epic.sh` to check generated epics against the expected structure and required sections.
+
+This operational profile is intentionally fuller than the minimum EPIC core
+format. Per the upstream spec, a valid Epic only requires `SKILL.md` and
+`EPIC.md`; `create-epic` scaffolds the more complete authored package used by
+the curated `epics` repo.
 
 ## Reference Material
 
