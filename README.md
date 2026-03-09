@@ -1,18 +1,64 @@
-# Agent Epics — Curated Skills
+# Agent Epics Curated Skills
 
-Public curated skills for the [Agent Epics](https://agentepics.io) project.
+This repository packages reusable skills for the Agent Epics ecosystem.
 
-Each directory is a standalone skill following the [SKILL.md specification](https://agentepics.io/skill-specification).
+Each top-level skill directory is a standalone installable unit built around a `SKILL.md` entrypoint. The repository currently ships one curated skill, `create-epic`, plus a synchronized `reference/` directory containing the upstream Epic and Skill specifications it depends on.
 
-## Skills
+## Repository Layout
 
-| Skill | Description |
-|-------|-------------|
-| [create-epic](create-epic/) | Scaffold a complete, operational Agent Epic from scratch |
+```text
+.
+├── create-epic/   # Skill for scaffolding a complete Agent Epic
+├── reference/     # Synced upstream specification and runtime docs
+└── .github/       # Maintenance automation, including reference sync
+```
 
-## Usage
+## Included Skill
 
-Skills can be installed into any Agent Epics workspace. Each skill directory contains a `SKILL.md` with routing metadata and instructions.
+### `create-epic`
+
+`create-epic` scaffolds a complete, operational Agent Epic from a user objective. It guides the agent to generate:
+
+- `SKILL.md`
+- `EPIC.md`
+- `state.json`
+- `plans/`
+- `log/`
+- `cron.d/`
+- `hooks/`
+- `policy.yml`
+
+The skill also includes a validator script at `create-epic/scripts/validate-epic.sh` to check generated epics against the expected structure and required sections.
+
+## Reference Material
+
+The `reference/` directory is intentionally treated as synced source material, not hand-maintained project documentation. Those files are pulled from `agentepics/agentepics` by `.github/workflows/sync-reference.yml`.
+
+Do not make manual edits in `reference/` unless you also intend to change the sync process or the upstream source, because local edits will be overwritten on the next sync.
+
+## Working On This Repo
+
+When changing the skill itself:
+
+1. Update `create-epic/SKILL.md` if the workflow or output contract changes.
+2. Update `create-epic/references/REFERENCE.md` if the quick-reference guidance needs to stay aligned with the skill.
+3. Update `create-epic/scripts/validate-epic.sh` if validation rules change.
+4. Keep the skill aligned with the synced Epic specification in `reference/`.
+
+When changing repository-level documentation:
+
+- Keep `README.md` focused on repo purpose, structure, and maintenance model.
+- Keep `AGENTS.md` focused on contributor and agent workflow constraints.
+
+## Validation
+
+To validate a generated epic:
+
+```bash
+create-epic/scripts/validate-epic.sh <epic-directory>
+```
+
+The validator checks required files, frontmatter, section presence, state fields, plan layout, hook formatting, cron config, policy structure, and some cross-file consistency rules.
 
 ## License
 

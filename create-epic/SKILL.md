@@ -3,89 +3,111 @@ name: create-epic
 description: >
   Create a new Agent Epic from scratch with all required and operational files.
   Use when the user wants to scaffold a new epic, start a new autonomous workflow,
-  create a new capability epic, or set up a new project epic. Handles SKILL.md,
-  EPIC.md, state.json, plans, log, cron, hooks, and policy generation following
-  the EPIC specification v0.5.0.
+  create a new capability epic, or set up a new project epic. Handles dual-purpose
+  SKILL.md generation, EPIC.md, runtime state, plans, log, cron, hooks, and policy
+  generation following the EPIC specification v0.5.2.
 license: Apache-2.0
 compatibility: Requires file system write access. Works in any workspace with Agent Epics.
 metadata:
   author: agentepics
-  version: "1.0"
+  version: "1.1"
 ---
 
 # Create Epic
 
-Scaffold a complete, operational Agent Epic following the EPIC specification v0.5.0.
+Scaffold a complete, operational Agent Epic following the EPIC specification v0.5.2.
+
+Before generating files, read `references/REFERENCE.md` for the exact canonical
+`## Agent Epics` footer, the current runtime layout, and the validation profile.
+Use the current authored-package format from `agentepics` and curated `epics`
+as the scaffolding target. If `epics.sh` implementation behavior lags behind the
+spec, keep the authored files spec-aligned and tell the user about any runtime
+follow-up they may still need.
 
 ## When to use this skill
 
 - User asks to create a new epic, workflow, or autonomous task
 - User wants to scaffold an epic from a description or objective
-- User says "new epic", "create epic", "scaffold epic", "start a new workflow"
-- User describes a goal that should become a durable autonomous workflow
+- User says "new epic", "create epic", "scaffold epic", or "start a new workflow"
+- User describes a goal that should become a durable autonomous workflow or capability
 
 ## Inputs
 
-Gather the following from the user before creating:
+Gather or infer the following:
 
-1. **Name** (required) — lowercase-with-hyphens identifier (e.g., `deploy-pipeline`)
-2. **Title** (required) — human-readable name (e.g., "Deploy Pipeline")
-3. **Objective** (required) — what this epic accomplishes
-4. **Category** (required) — one of: Execution, Planning, Automation, Governance, Communication, or a custom category
+1. **Name** (required) — lowercase-with-hyphens identifier, under 64 characters
+2. **Title** (required) — human-readable name
+3. **Objective** (required) — what the epic accomplishes in 1–2 sentences
+4. **Category** (required) — Execution, Planning, Automation, Governance, Communication, or a custom category
 5. **Archetype** (required) — one of:
-   - `workflow` — reusable process (e.g., how to launch SaaS, run outreach)
+   - `workflow` — reusable process with fresh runtime state per run
    - `instance` — one-off project with unique scope
-   - `capability` — extends the agent itself (new tools, channels, integrations)
+   - `capability` — durable agent extension or integration
 6. **Cron schedule** (optional) — how often the epic should run autonomously
-7. **Tags** (optional) — keywords for discovery
+7. **Tags** (optional) — discovery keywords
 
-If the user provides a freeform description instead of structured inputs, infer these fields from context. Ask only for what cannot be reasonably inferred.
+If the user gives a freeform description, infer missing fields and ask only for
+what cannot be safely inferred.
 
 ## Output structure
 
-Create the following directory tree at the target location:
+Create this authored-package profile:
 
-```
+```text
 {name}/
-├── SKILL.md              # Routing and instructions
-├── EPIC.md               # Workflow definition with YAML frontmatter
-├── state.json            # Initial structured state
-├── plans/
-│   └── 001-initial.md    # First tactical plan
-├── log/
-│   └── .gitkeep          # Preserve empty directory
-├── cron.d/               # At least one cron job if autonomous
-│   └── {schedule}.yml
-├── hooks/                # Lifecycle hooks
-│   ├── install.md        # Always include install hook
-│   ├── status-changed.md # Always include status-changed hook
-│   └── ...               # Additional hooks based on archetype
-└── policy.yml            # Autonomy constraints
+├── SKILL.md
+├── EPIC.md
+├── runtime/
+│   ├── state.json
+│   ├── plans/
+│   │   └── 001-initial.md
+│   └── log/
+│       └── .gitkeep
+├── hooks/
+│   ├── install.md
+│   ├── status-changed.md
+│   └── ...
+├── cron.d/
+│   └── {job}.yml
+└── policy.yml
 ```
 
-## Step-by-step instructions
+Use `runtime/` for live state. Do not scaffold top-level `state.json`, `plans/`,
+`log/`, `ROADMAP.md`, `DECISIONS.md`, or `artifacts/`.
 
-### Step 1: Create SKILL.md
+## Operating loop
 
-Write a SKILL.md with three sections:
+1. Infer or confirm the inputs.
+2. Choose tags, hooks, cron cadence, and policy limits based on the archetype and category.
+3. Generate the full epic directory with epic-specific content.
+4. Populate `runtime/state.json`, `runtime/plans/001-initial.md`, and `runtime/log/.gitkeep`.
+5. Validate the scaffolded epic.
+6. Report the created file tree, validator output, and a one-line summary of each file.
 
-- **Purpose** — one paragraph explaining what this epic does and what it does NOT do
-- **Operating loop** — numbered steps the agent follows each cycle
-- **Rules** — hard constraints on behavior (3–5 bullet points)
+## File instructions
 
-The operating loop must always include:
-1. Reading state.json to orient
-2. Doing the core work
-3. Writing a log entry
-4. Updating state.json
+### 1. Create `SKILL.md`
 
-### Step 2: Create EPIC.md
+Write a dual-purpose `SKILL.md` for `spec_version: 0.5.2`:
+
+- Add standard skill frontmatter with `name` and `description`
+- Keep the top section short and activation-oriented
+- State what the epic does and when it should activate
+- Explicitly say that `EPIC.md` is the authoritative source for lifecycle, state model, guardrails, and resume behavior
+- Include a one-line pointer near the top telling first-time readers to see the **Agent Epics** section below
+- Append the exact canonical footer block from `references/REFERENCE.md`
+- Make the canonical footer the final section of the file with nothing after it
+
+Do not use the old `Purpose`, `Operating loop`, and `Rules` structure for authored epics.
+Do not paraphrase or rewrite the canonical footer.
+
+### 2. Create `EPIC.md`
 
 Use this frontmatter template:
 
 ```yaml
 ---
-spec_version: 0.5.0
+spec_version: 0.5.2
 id: {name}
 tags: [{tags}]
 timezone: UTC
@@ -93,14 +115,18 @@ timezone: UTC
 ```
 
 Include these sections in the body:
-- **Objective** — what this epic accomplishes (1–2 sentences)
-- **Phases** — numbered list of lifecycle phases (3–6 phases)
-- **Success criteria** — measurable outcomes (3–5 bullets)
-- **State to preserve** — which files hold durable state
-- **Guardrails** — what the epic must NOT do (2–4 bullets)
-- **Resume** — exact steps to resume from interruption
 
-### Step 3: Create state.json
+- `## Objective`
+- `## Phases`
+- `## Success criteria`
+- `## State to preserve`
+- `## Guardrails`
+- `## Resume`
+
+Keep `EPIC.md` focused on the durable operating definition. Put volatile work in
+`runtime/`, not in the `EPIC.md` body.
+
+### 3. Create `runtime/state.json`
 
 Always include these reserved fields:
 
@@ -113,11 +139,13 @@ Always include these reserved fields:
 }
 ```
 
-Add epic-specific fields based on the objective. Keep it flat — avoid deeply nested objects.
+Add epic-specific flat fields that reflect the objective. Prefer simple
+machine-readable facts over nested structures unless the objective requires
+otherwise.
 
-### Step 4: Create plans/001-initial.md
+### 4. Create `runtime/plans/001-initial.md`
 
-Use this template:
+Use this structure:
 
 ```markdown
 # {Title} — Initial Plan
@@ -135,39 +163,54 @@ Updated: {today's date}
 - Nothing currently blocked
 ```
 
-Keep each section to 2–4 items. Be specific — "Set up X" not "Get started".
+Keep each section concrete. Use 2–4 items where possible.
 
-### Step 5: Create hooks/
+### 5. Create `runtime/log/`
 
-**Always create this hook:**
+Always create `runtime/log/.gitkeep`.
 
-- `install.md` — runs on first activation. Should orient the epic, verify prerequisites, populate initial state, and write the first log entry.
+Do not write a starter log file unless the task specifically calls for one.
 
-**Create additional hooks based on archetype:**
+### 6. Create `hooks/`
 
-| Archetype | Recommended hooks |
-|-----------|-------------------|
-| workflow | `status-changed.md`, `plan-empty.md`, `milestone-complete.md` |
-| instance | `status-changed.md`, `plan-empty.md`, `became-blocked.md` |
-| capability | `status-changed.md`, `became-blocked.md` |
+Always create:
 
-`status-changed.md` is recommended when the epic needs special handling for pause/resume/complete transitions, but is not required.
+- `install.md`
+- `status-changed.md`
 
-Hook format:
+Add more hooks based on the archetype:
+
+| Archetype | Additional hooks |
+|-----------|------------------|
+| workflow | `plan-empty.md`, `milestone-complete.md` |
+| instance | `plan-empty.md`, `became-blocked.md` |
+| capability | `became-blocked.md` |
+
+Use markdown hooks with YAML frontmatter:
 
 ```markdown
 ---
 enabled: true
 type: prompt
-timeout: {120-300}
+timeout: 300
 ---
 
-{Prompt instructions for what the hook should do}
+{Imperative hook instructions that reference runtime/... paths}
 ```
 
-### Step 6: Create cron.d/
+Use `runtime/...` paths inside hook bodies. Hooks should be specific, imperative,
+and idempotent-friendly.
 
-If the epic runs autonomously, create at least one cron job. Choose the schedule based on the epic's nature:
+Current `epics.sh` builds may only execute install hooks directly. Still scaffold
+the broader typed-hook package surface used by the spec and curated epics, but do
+not claim every trigger executes automatically in every host today.
+
+### 7. Create `cron.d/`
+
+If the epic is autonomous, create at least one cron job. For manual-only epics,
+skip `cron.d/`.
+
+Suggested schedules:
 
 | Pattern | Schedule | Use for |
 |---------|----------|---------|
@@ -177,7 +220,7 @@ If the epic runs autonomously, create at least one cron job. Choose the schedule
 | Daily | `0 9 * * *` | Planning, reporting, audits |
 | Weekly | `0 10 * * 1` | Summaries, reviews |
 
-Cron format:
+Use this structure:
 
 ```yaml
 name: {descriptive-name}
@@ -187,28 +230,31 @@ enabled: true
 run:
   type: prompt
   prompt: |
-    {What the agent should do each cycle. Reference state.json,
-    plans/, and other epic files by name.}
+    {Cycle instructions that reference runtime/state.json, runtime/plans/,
+    and other relevant runtime paths}
 context:
-  - state.json
+  - runtime/state.json
 output:
   log: true
   update_state: true
   notify: false
 ```
 
-### Step 7: Create policy.yml
+Current `epics.sh` builds may require explicit daemon route setup for scheduled
+execution instead of automatically consuming package `cron.d/` jobs. Still author
+the YAML cron files, but note any extra runtime setup the user may need.
 
-Set autonomy constraints appropriate to the epic's risk level:
+### 8. Create `policy.yml`
+
+Use this structure:
 
 ```yaml
 autonomy:
-  max_spend_per_run: {0.10 for low-risk, 0.25 for medium, 1.00 for high}
+  max_spend_per_run: {0.10-1.00 depending on risk}
   allowed_tools:
     - bash
     - file_read
     - file_write
-    {add more based on need}
   forbidden_actions:
     - {actions this epic must never take}
 
@@ -217,40 +263,37 @@ escalation:
   on_ambiguity: ask_human
 ```
 
-Guidelines for spend limits:
-- Capability/monitoring epics: $0.10–$0.25
-- Governance/reporting epics: $0.25
-- Planning epics: $0.50
-- Execution epics: $0.50–$1.00
+Suggested spend limits:
 
-### Step 8: Verify
+- Capability and monitoring epics: `0.10`–`0.25`
+- Governance and reporting epics: `0.25`
+- Planning epics: `0.50`
+- Execution epics: `0.50`–`1.00`
 
-After creating all files, verify:
-- [ ] SKILL.md has Purpose, Operating loop, and Rules sections
-- [ ] EPIC.md has valid frontmatter with spec_version 0.5.0
-- [ ] EPIC.md has all required sections (Objective, Phases, Success criteria, State to preserve, Guardrails, Resume)
-- [ ] state.json has state_version, status, and current_plan fields
-- [ ] plans/001-initial.md has Now, Next, and Blocked sections
-- [ ] hooks/install.md exists and handles first activation
-- [ ] At least one cron job exists if the epic is autonomous
-- [ ] policy.yml has autonomy and escalation sections
-- [ ] All file content is specific to this epic — no generic placeholder text
+## Validation
 
-Then run the validator:
+After scaffolding:
 
-```bash
-scripts/validate-epic.sh <epic-directory>
-```
+1. Run `bash scripts/validate-epic.sh <epic-directory>`
+2. If the `epics` CLI is available, also run `epics validate <epic-directory>` as an additional package check
+3. Fix any failures before considering the epic complete
 
-The validator checks all required files, frontmatter, body sections, state fields, plan
-structure, hook format, cron YAML, policy structure, and cross-file consistency. Fix
-any errors before considering the epic complete. Warnings are advisory.
+Verify at minimum:
 
-Report the created file tree, validator output, and a one-line summary of each file to the user.
+- `SKILL.md` has standard frontmatter and the exact canonical footer
+- `EPIC.md` says `spec_version: 0.5.2`
+- All live-state references point to `runtime/...`
+- `runtime/state.json` includes `state_version`, `status`, and `current_plan`
+- `runtime/plans/001-initial.md` has `Now`, `Next`, and `Blocked`
+- `hooks/install.md` exists
+- `policy.yml` has `autonomy` and `escalation`
+- All generated text is specific to the epic, not placeholder prose
 
 ## Edge cases
 
-- If the user wants an epic without cron (manual-only), skip cron.d/ but still create hooks
-- If the user provides a very short description, ask for the objective before proceeding
-- If the target directory already has an epic, warn the user before overwriting
-- For capability epics, emphasize that SKILL.md teaches the agent how to USE the capability across all contexts — not just within this epic
+- If the target directory already exists and contains an epic, warn before overwriting
+- If the user wants a manual-only epic, omit `cron.d/` but keep `hooks/`
+- If the user gives too little information to infer an objective, ask for the objective before generating
+- If the user asks for the smallest possible valid epic, explain that this skill intentionally scaffolds the fuller operational profile
+- For capability epics, emphasize that the top section of `SKILL.md` teaches when to activate the capability, while durable behavior lives in `EPIC.md` and `runtime/`
+- If the user relies on `epics.sh`, mention that some runtime features may still require extra host or daemon setup even when the authored epic files are correct
