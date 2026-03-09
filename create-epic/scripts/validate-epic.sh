@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
-# validate-epic.sh — Validate an Agent Epic directory against EPIC spec v0.5.0
+# validate-epic.sh — Validate an Agent Epic directory against EPIC spec v0.5.0 or v0.5.1
 #
 # Usage: validate-epic.sh <epic-directory>
+#
+# Supports both v0.5.0 (flat layout) and v0.5.1 (runtime/ layout).
+# Detects version from EPIC.md spec_version frontmatter.
 #
 # Checks:
 #   - Required files exist (SKILL.md, EPIC.md)
 #   - SKILL.md frontmatter and body structure
 #   - EPIC.md frontmatter and body sections
-#   - state.json reserved fields
-#   - plans/ structure and required sections
+#   - state.json reserved fields (top-level or runtime/)
+#   - plans/ structure and required sections (top-level or runtime/)
 #   - hooks/ required triggers and format
 #   - cron.d/ YAML structure
 #   - policy.yml structure
 #   - Name validation (lowercase, no consecutive hyphens, etc.)
-#   - Log directory exists
+#   - Log directory exists (top-level or runtime/)
+#   - v0.5.1: no stale top-level live state files
 #
 # Exit codes:
 #   0 — all checks passed
@@ -58,7 +62,7 @@ section() {
 if [ $# -lt 1 ]; then
   echo "Usage: validate-epic.sh <epic-directory>"
   echo ""
-  echo "Validate an Agent Epic directory against EPIC spec v0.5.0."
+  echo "Validate an Agent Epic directory against EPIC spec v0.5.0 or v0.5.1."
   exit 2
 fi
 
@@ -219,10 +223,12 @@ if [ -f "$EPIC_DIR/EPIC.md" ]; then
 
   # Check spec_version
   SPEC_VERSION=$(fm_value "$EPIC_DIR/EPIC.md" "spec_version" || true)
-  if [ "$SPEC_VERSION" = "0.5.0" ]; then
+  if [ "$SPEC_VERSION" = "0.5.1" ]; then
+    pass "spec_version is 0.5.1"
+  elif [ "$SPEC_VERSION" = "0.5.0" ]; then
     pass "spec_version is 0.5.0"
   elif [ -n "$SPEC_VERSION" ]; then
-    warn "spec_version is '$SPEC_VERSION' (expected 0.5.0)"
+    warn "spec_version is '$SPEC_VERSION' (expected 0.5.0 or 0.5.1)"
   else
     fail "Missing spec_version in frontmatter"
   fi
@@ -250,16 +256,58 @@ if [ -f "$EPIC_DIR/EPIC.md" ]; then
 fi
 
 # ============================================================
-# 5. STATE.JSON VALIDATION
+# LAYOUT DETECTION (v0.5.0 flat vs v0.5.1 runtime/)
 # ============================================================
-section "state.json"
+# Detect spec version to determine where live state lives
+DETECTED_VERSION=$(fm_value "$EPIC_DIR/EPIC.md" "spec_version" 2>/dev/null || true)
 
-if [ -f "$EPIC_DIR/state.json" ]; then
-  pass "state.json exists"
+if [ "$DETECTED_VERSION" = "0.5.1" ]; then
+  STATE_DIR="$EPIC_DIR/runtime"
+  STATE_PREFIX="runtime/"
+else
+  STATE_DIR="$EPIC_DIR"
+  STATE_PREFIX=""
+fi
+
+# ============================================================
+# 5. RUNTIME/ LAYOUT VALIDATION (v0.5.1 only)
+# ============================================================
+if [ "$DETECTED_VERSION" = "0.5.1" ]; then
+  section "runtime/ layout (v0.5.1)"
+
+  if [ -d "$EPIC_DIR/runtime" ]; then
+    pass "runtime/ directory exists"
+  else
+    fail "runtime/ directory is missing (required for v0.5.1)"
+  fi
+
+  # Check that stale top-level live state files do NOT exist
+  for stale in state.json log plans ROADMAP.md DECISIONS.md artifacts; do
+    if [ -e "$EPIC_DIR/$stale" ]; then
+      fail "Stale top-level '$stale' exists (should be under runtime/ in v0.5.1)"
+    fi
+  done
+  # Only report pass if we checked and found none
+  STALE_COUNT=0
+  for stale in state.json log plans ROADMAP.md DECISIONS.md artifacts; do
+    [ -e "$EPIC_DIR/$stale" ] && STALE_COUNT=$((STALE_COUNT + 1))
+  done
+  if [ "$STALE_COUNT" -eq 0 ]; then
+    pass "No stale top-level live state files"
+  fi
+fi
+
+# ============================================================
+# 5b. STATE.JSON VALIDATION
+# ============================================================
+section "${STATE_PREFIX}state.json"
+
+if [ -f "$STATE_DIR/state.json" ]; then
+  pass "${STATE_PREFIX}state.json exists"
 
   # Check reserved fields
   for field in state_version status current_plan; do
-    if json_has_key "$EPIC_DIR/state.json" "$field"; then
+    if json_has_key "$STATE_DIR/state.json" "$field"; then
       pass "Has reserved field '$field'"
     else
       fail "Missing reserved field '$field'"
@@ -267,7 +315,7 @@ if [ -f "$EPIC_DIR/state.json" ]; then
   done
 
   # Check status value
-  STATUS=$(json_value "$EPIC_DIR/state.json" "status")
+  STATUS=$(json_value "$STATE_DIR/state.json" "status")
   case "$STATUS" in
     active|paused|complete|abandoned)
       pass "Status is valid ('$STATUS')"
@@ -278,24 +326,24 @@ if [ -f "$EPIC_DIR/state.json" ]; then
   esac
 
   # Check valid JSON
-  if python3 -c "import json; json.load(open('$EPIC_DIR/state.json'))" 2>/dev/null; then
+  if python3 -c "import json; json.load(open('$STATE_DIR/state.json'))" 2>/dev/null; then
     pass "Valid JSON"
   else
     fail "Invalid JSON syntax"
   fi
 else
-  fail "state.json is missing (recommended)"
+  fail "${STATE_PREFIX}state.json is missing (recommended)"
 fi
 
 # ============================================================
 # 6. PLANS/ VALIDATION
 # ============================================================
-section "plans/"
+section "${STATE_PREFIX}plans/"
 
-if [ -d "$EPIC_DIR/plans" ]; then
-  pass "plans/ directory exists"
+if [ -d "$STATE_DIR/plans" ]; then
+  pass "${STATE_PREFIX}plans/ directory exists"
 
-  PLAN_COUNT=$(find "$EPIC_DIR/plans" -name '*.md' -type f 2>/dev/null | wc -l | tr -d ' ')
+  PLAN_COUNT=$(find "$STATE_DIR/plans" -name '*.md' -type f 2>/dev/null | wc -l | tr -d ' ')
   if [ "$PLAN_COUNT" -gt 0 ]; then
     pass "Contains $PLAN_COUNT plan file(s)"
 
@@ -327,23 +375,23 @@ if [ -d "$EPIC_DIR/plans" ]; then
       else
         warn "$plan_name missing Updated: line"
       fi
-    done < <(find "$EPIC_DIR/plans" -name '*.md' -type f 2>/dev/null)
+    done < <(find "$STATE_DIR/plans" -name '*.md' -type f 2>/dev/null)
   else
-    fail "plans/ has no .md files"
+    fail "${STATE_PREFIX}plans/ has no .md files"
   fi
 else
-  fail "plans/ directory is missing (recommended)"
+  fail "${STATE_PREFIX}plans/ directory is missing (recommended)"
 fi
 
 # ============================================================
 # 7. LOG/ VALIDATION
 # ============================================================
-section "log/"
+section "${STATE_PREFIX}log/"
 
-if [ -d "$EPIC_DIR/log" ]; then
-  pass "log/ directory exists"
+if [ -d "$STATE_DIR/log" ]; then
+  pass "${STATE_PREFIX}log/ directory exists"
 else
-  fail "log/ directory is missing (recommended)"
+  fail "${STATE_PREFIX}log/ directory is missing (recommended)"
 fi
 
 # ============================================================
@@ -567,13 +615,13 @@ fi
 section "Cross-file consistency"
 
 # Check that current_plan in state.json points to an existing file
-if [ -f "$EPIC_DIR/state.json" ] && [ -d "$EPIC_DIR/plans" ]; then
-  CURRENT_PLAN=$(json_value "$EPIC_DIR/state.json" "current_plan")
+if [ -f "$STATE_DIR/state.json" ] && [ -d "$STATE_DIR/plans" ]; then
+  CURRENT_PLAN=$(json_value "$STATE_DIR/state.json" "current_plan")
   if [ -n "$CURRENT_PLAN" ] && [ "$CURRENT_PLAN" != "null" ]; then
-    if [ -f "$EPIC_DIR/plans/$CURRENT_PLAN" ]; then
-      pass "current_plan '$CURRENT_PLAN' exists in plans/"
+    if [ -f "$STATE_DIR/plans/$CURRENT_PLAN" ]; then
+      pass "current_plan '$CURRENT_PLAN' exists in ${STATE_PREFIX}plans/"
     else
-      fail "current_plan '$CURRENT_PLAN' does not exist in plans/"
+      fail "current_plan '$CURRENT_PLAN' does not exist in ${STATE_PREFIX}plans/"
     fi
   fi
 fi
@@ -597,6 +645,8 @@ fi
 # ============================================================
 printf "\n${BOLD}━━━ Summary ━━━${RESET}\n"
 printf "Epic:     %s\n" "$EPIC_NAME"
+printf "Version:  %s\n" "${DETECTED_VERSION:-unknown}"
+printf "Layout:   %s\n" "$([ "$DETECTED_VERSION" = "0.5.1" ] && echo "runtime/" || echo "flat")"
 printf "Checks:   %d\n" "$CHECKS"
 printf "${GREEN}Passed:   %d${RESET}\n" "$((CHECKS - ERRORS))"
 if [ "$ERRORS" -gt 0 ]; then
