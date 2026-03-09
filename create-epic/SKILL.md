@@ -283,7 +283,7 @@ Verify at minimum:
 - `SKILL.md` has standard frontmatter and the exact canonical footer
 - `EPIC.md` says `spec_version: 0.5.2`
 - All live-state references point to `runtime/...`
-- `runtime/state.json` includes `state_version`, `status`, and `current_plan`
+- `runtime/state.json` includes `state_version`, `status`, `name`, and `current_plan`
 - `runtime/plans/001-initial.md` has `Now`, `Next`, and `Blocked`
 - `hooks/install.md` exists
 - `policy.yml` has `autonomy` and `escalation`

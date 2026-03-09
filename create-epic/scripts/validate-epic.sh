@@ -214,7 +214,7 @@ import json, sys
 path = sys.argv[1]
 with open(path, "r", encoding="utf-8") as f:
     data = json.load(f)
-required = ["state_version", "status", "current_plan"]
+required = ["state_version", "status", "name", "current_plan"]
 missing = [key for key in required if key not in data]
 if missing:
     print(",".join(missing))
@@ -232,7 +232,7 @@ PY
 )
     pass "runtime/state.json is valid JSON and includes reserved fields"
   else
-    fail "runtime/state.json must be valid JSON with state_version, status, and current_plan"
+    fail "runtime/state.json must be valid JSON with state_version, status, name, and current_plan"
   fi
 fi
 
@@ -320,10 +320,10 @@ for hook_file in "${HOOK_FILES[@]}"; do
     fail "$hook_name is missing frontmatter"
   fi
 
-  if grep -Eq '^type:[[:space:]]+(prompt|agent)' "$hook_file"; then
-    pass "$hook_name declares a supported markdown hook type"
+  if grep -Eq '^type:[[:space:]]+(prompt|script|http|agent)' "$hook_file"; then
+    pass "$hook_name declares a supported hook type"
   else
-    fail "$hook_name must declare type: prompt or type: agent in frontmatter"
+    fail "$hook_name must declare type: prompt, script, http, or agent in frontmatter"
   fi
 done
 
