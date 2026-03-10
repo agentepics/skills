@@ -45,6 +45,7 @@ Gather or infer the following:
    - `capability` — durable agent extension or integration
 6. **Cron schedule** (optional) — how often the epic should run autonomously
 7. **Tags** (optional) — discovery keywords
+8. **Published source** (optional) — where the full epic package is published, for epics intended to be recoverable from a standalone `SKILL.md`
 
 If the user gives a freeform description, infer missing fields and ask only for
 what cannot be safely inferred.
@@ -95,11 +96,32 @@ Write a dual-purpose `SKILL.md` for `spec_version: 0.5.2`:
 - State what the epic does and when it should activate
 - Explicitly say that `EPIC.md` is the authoritative source for lifecycle, state model, guardrails, and resume behavior
 - Include a one-line pointer near the top telling first-time readers to see the **Agent Epics** section below
+- For published epics intended to be recoverable from only `SKILL.md`, add recommended `metadata.source` frontmatter
 - Append the exact canonical footer block from `references/REFERENCE.md`
 - Make the canonical footer the final section of the file with nothing after it
 
 Do not use the old `Purpose`, `Operating loop`, and `Rules` structure for authored epics.
 Do not paraphrase or rewrite the canonical footer.
+
+For `metadata.source`, support these forms:
+
+- absolute `http` or `https` URL string
+- structured object with `repo`, `path`, and optional `ref`
+
+Recommended form:
+
+```yaml
+metadata:
+  source:
+    repo: github.com/agentepics/epics
+    path: agent-heartbeat
+    ref: main
+```
+
+`metadata.source` is recommended for published epics, not required. If it is
+absent, the epic is still valid. Hosts may use it to locate the full epic when
+only `SKILL.md` is available, but trust policy still governs any fetch or
+install behavior.
 
 ### 2. Create `EPIC.md`
 
@@ -281,6 +303,7 @@ After scaffolding:
 Verify at minimum:
 
 - `SKILL.md` has standard frontmatter and the exact canonical footer
+- `metadata.source` is included when the epic is meant to be published and recoverable from standalone `SKILL.md`
 - `EPIC.md` says `spec_version: 0.5.2`
 - All live-state references point to `runtime/...`
 - `runtime/state.json` includes `state_version`, `status`, `name`, and `current_plan`

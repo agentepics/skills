@@ -40,6 +40,30 @@ For `0.5.2`, `SKILL.md` is a dual-purpose file:
 The top section should stay short and activation-cheap. It should not duplicate
 resume logic, lifecycle detail, or working-state rules from `EPIC.md`.
 
+### Optional `metadata.source`
+
+For published epics intended to be recoverable from a standalone `SKILL.md`,
+`metadata.source` is recommended but not required.
+
+Supported forms:
+
+- absolute `http` or `https` URL string
+- structured object with `repo`, `path`, and optional `ref`
+
+Recommended form:
+
+```yaml
+metadata:
+  source:
+    repo: github.com/agentepics/epics
+    path: agent-heartbeat
+    ref: main
+```
+
+Hosts may use `metadata.source` to locate the full epic when only `SKILL.md` is
+available. If it is absent, the epic remains valid. Trust policy still governs
+any fetch or install behavior.
+
 ### Canonical footer
 
 Copy this block exactly and keep it as the final section of `SKILL.md`:

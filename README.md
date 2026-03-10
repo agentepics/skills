@@ -30,6 +30,10 @@ Each top-level skill directory is a standalone installable unit built around a `
 
 The skill also includes a validator script at `create-epic/scripts/validate-epic.sh` to check generated epics against the expected structure and required sections.
 
+For published epics that should be recoverable from a standalone `SKILL.md`,
+the skill now also documents the optional `metadata.source` hint in `SKILL.md`
+frontmatter.
+
 This operational profile is intentionally fuller than the minimum EPIC core
 format. Per the upstream spec, a valid Epic only requires `SKILL.md` and
 `EPIC.md`; `create-epic` scaffolds the more complete authored package used by
